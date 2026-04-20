@@ -13,7 +13,8 @@ CORS(app)
 # =========================================================
 # CONFIG
 # =========================================================
-MODEL_DIR = r"C:\Users\User\Desktop\Final Year Project\22b6023 Muizzul\2 Scripts\dashboard\saved_best_models"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MODEL_DIR = os.path.join(BASE_DIR, "saved_best_models")
 
 SEMESTER_NUM_TO_SHEET = {
     2: "Y1S1",
