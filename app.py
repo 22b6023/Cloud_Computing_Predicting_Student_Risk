@@ -10,9 +10,7 @@ from io import BytesIO
 app = Flask(__name__, template_folder="templates", static_folder="static")
 CORS(app)
 
-# =========================================================
 # CONFIG
-# =========================================================
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_DIR = os.path.join(BASE_DIR, "saved_best_models")
@@ -43,9 +41,8 @@ SEMESTER_NUM_TO_LABEL = {
     8: "Y4S2"
 }
 
-# =========================================================
 # HELPERS
-# =========================================================
+
 def safe_float(value):
     try:
         if value is None or value == "":
@@ -128,12 +125,12 @@ def build_semester_features(sheet_label, semester_data):
     features[f"mark_max_{sheet_label}"] = float(marks_series.max()) if marks_series.notna().any() else 0.0
     features[f"mark_std_{sheet_label}"] = float(marks_series.std(ddof=0)) if marks_series.notna().any() else 0.0
 
-    # Level-based weighted averages
+    # Level based weighted averages
     for L in [1, 2, 3, 4]:
         g = df.loc[df["module_level"] == L]
         features[f"wavg_mark_L{L}_{sheet_label}"] = wavg_zero(g["MARKS"], g["MC"])
 
-    # Type-based weighted averages
+    # Type based weighted averages
     for T in [1, 2, 3, 4, 5]:
         g = df.loc[df["module_type"] == T]
         features[f"wavg_mark_T{T}_{sheet_label}"] = wavg_zero(g["MARKS"], g["MC"])
@@ -196,7 +193,7 @@ def get_recommendation(risk, decline_detected):
     return base
 
 def detect_decline(feature_map, predict_semester_x):
-    # Compare the last two available GPA points before X
+    # Compare last two  GPA points before X
     gpas = []
     for sem_num in range(1, predict_semester_x):
         sheet_label = SEMESTER_NUM_TO_LABEL[sem_num]
@@ -207,9 +204,8 @@ def detect_decline(feature_map, predict_semester_x):
 
     return gpas[-1] < gpas[-2]
 
-# =========================================================
 # ROUTES
-# =========================================================
+
 @app.route("/predict", methods=["POST"])
 def predict():
     try:
@@ -287,8 +283,7 @@ def predict_batch():
 
         full_df = pd.concat(all_rows, ignore_index=True)
 
-        # Lecturer batch view currently predicts using Semester 5 setup
-        # (history up to Y2S2 -> predict future risk)
+        # Lecturer batch view
         checkpoint_sheet, model, feature_columns = load_model_and_features_for_x(5)
 
         results = []
@@ -402,7 +397,7 @@ def predict_batch():
             "Y2S2": round(float(feature_df["wavg_mark_Y2S2"].mean()), 4) if "wavg_mark_Y2S2" in feature_df.columns else 0
         }
 
-        # Sharpest GPA decline across cohort means
+        # Sharpest GPA decline 
         avg_gpa_by_sem = {
             "Y1S1": round(float(results_df["GPA_Y1S1"].mean()), 4) if not results_df.empty else 0,
             "Y1S2": round(float(results_df["GPA_Y1S2"].mean()), 4) if not results_df.empty else 0,
@@ -437,7 +432,7 @@ def predict_batch():
         weakest_module_level = f"{weakest_level[0]} ({round(weakest_level[1], 2)})"
         weakest_module_type = f"{weakest_type[0]} ({round(weakest_type[1], 2)})"
 
-        # Keep this lightweight for now so JS charts do not break
+      
         risk_count_by_semester = {
             "Y1S1": {"High Risk": 0, "Moderate Risk": 0, "Low Risk": 0},
             "Y1S2": {"High Risk": 0, "Moderate Risk": 0, "Low Risk": 0},
@@ -471,8 +466,8 @@ def predict_batch():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-# =========================================================
+        
 # RUN
-# =========================================================
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
